@@ -197,7 +197,8 @@
         min-width: 100px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 50px;
         height: 50px;
       }
@@ -217,7 +218,8 @@
         min-width: 120px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 60px;
         height: 60px;
       }
@@ -237,7 +239,8 @@
         min-width: 140px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 80px;
         height: 80px;
       }
@@ -257,7 +260,8 @@
         min-width: 160px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 100px;
         height: 100px;
       }
@@ -277,7 +281,8 @@
         min-width: 180px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 110px;
         height: 110px;
       }
@@ -297,7 +302,8 @@
         min-width: 200px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 130px;
         height: 130px;
       }
@@ -317,7 +323,8 @@
         min-width: 220px;
       }
 
-      #upcoming {
+      #upcoming,
+      #hold-canvas {
         width: 150px;
         height: 150px;
       }
@@ -342,6 +349,88 @@
 
     #start.playing {
       animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* Pause overlay */
+    .pause-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(251, 247, 244, 0.85);
+      border-radius: 16px;
+      z-index: 10;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.4em;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.1em;
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    .pause-overlay.visible {
+      display: flex;
+    }
+
+    /* Canvas wrapper for overlay positioning */
+    .canvas-wrapper {
+      position: relative;
+    }
+
+    /* New high score indicator */
+    .new-hs {
+      font-size: 0.65em;
+      color: var(--red-pastel);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      display: none;
+      margin-top: 2px;
+    }
+
+    .new-hs.visible {
+      display: block;
+    }
+
+    @keyframes line-flash {
+      0% {
+        opacity: 0;
+      }
+
+      40% {
+        opacity: 0.9;
+      }
+
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Hold preview */
+    #hold-canvas {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Touch button extras */
+    .touch-btn-harddrop {
+      grid-column: 1;
+      grid-row: 2;
+      background: linear-gradient(135deg, var(--pastel-coral) 0%, #F09A94 100%);
+      color: #8A4A4A;
+    }
+
+    .touch-btn-hold {
+      grid-column: 3;
+      grid-row: 2;
+      background: linear-gradient(135deg, var(--pastel-yellow) 0%, #F0E6A0 100%);
+      color: #8A7A3A;
     }
 
     /* =========================================
@@ -470,7 +559,12 @@
   <div id="tetris">
     <div id="menu">
       <h1 class="game-title">Tetris</h1>
-      <p id="start"><a href="javascript:TetrisGame.play();">Press Space to Play</a></p>
+      <p id="start"><a href="javascript:TetrisGame.play();">Press Enter to Play</a></p>
+
+      <div class="next-piece-container">
+        <p class="section-label">Hold</p>
+        <canvas id="hold-canvas"></canvas>
+      </div>
 
       <div class="next-piece-container">
         <p class="section-label">Next</p>
@@ -483,20 +577,35 @@
       </div>
 
       <div class="stat-card">
+        <p class="section-label">High Score</p>
+        <p class="stat-value"><span id="high-score">00000</span></p>
+        <p class="new-hs" id="new-hs-label">NEW HIGH SCORE!</p>
+      </div>
+
+      <div class="stat-card">
+        <p class="section-label">Level</p>
+        <p class="stat-value"><span id="level">1</span></p>
+      </div>
+
+      <div class="stat-card">
         <p class="section-label">Rows</p>
         <p class="stat-value"><span id="rows">0</span></p>
       </div>
 
       <div class="controls-hint">
-        <kbd>←</kbd> <kbd>→</kbd> Move<br>
-        <kbd>↑</kbd> Rotate <kbd>↓</kbd> Drop<br>
+        <kbd>←</kbd> <kbd>→</kbd> Move · <kbd>↑</kbd> Rotate<br>
+        <kbd>↓</kbd> Soft Drop · <kbd>Space</kbd> Hard Drop<br>
+        <kbd>C</kbd> Hold · <kbd>P</kbd> Pause<br>
         <kbd>Esc</kbd> End game
       </div>
     </div>
 
-    <canvas id="canvas">
-      Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
-    </canvas>
+    <div class="canvas-wrapper">
+      <canvas id="canvas">
+        Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
+      </canvas>
+      <div class="pause-overlay" id="pause-overlay">PAUSED</div>
+    </div>
   </div>
 
   <!-- Touch Controls for Mobile/Tablet -->
@@ -506,7 +615,9 @@
       <button class="touch-btn touch-btn-left game-controls hidden" id="touch-left">◀</button>
       <button class="touch-btn touch-btn-rotate game-controls hidden" id="touch-rotate">↻</button>
       <button class="touch-btn touch-btn-right game-controls hidden" id="touch-right">▶</button>
+      <button class="touch-btn touch-btn-harddrop game-controls hidden" id="touch-harddrop">⤓</button>
       <button class="touch-btn touch-btn-drop game-controls hidden" id="touch-drop">▼</button>
+      <button class="touch-btn touch-btn-hold game-controls hidden" id="touch-hold">⇄</button>
     </div>
   </div>
 
@@ -526,7 +637,10 @@
       LEFT: 37,
       UP: 38,
       RIGHT: 39,
-      DOWN: 40
+      DOWN: 40,
+      ENTER: 13,
+      P: 80,
+      C: 67
     });
 
     const DIRECTIONS = Object.freeze({
@@ -539,18 +653,20 @@
     });
 
     const GAME_CONFIG = Object.freeze({
-      COURT_WIDTH: 10,    // Width in blocks
-      COURT_HEIGHT: 20,   // Height in blocks
-      PREVIEW_SIZE: 5,    // Preview area size in blocks
+      COURT_WIDTH: 10,
+      COURT_HEIGHT: 20,
+      PREVIEW_SIZE: 5,
       SPEED: {
-        START: 0.6,       // Initial drop interval (seconds)
-        DECREMENT: 0.005, // Speed increase per row cleared
-        MIN: 0.1          // Maximum speed (minimum interval)
+        START: 0.8,
+        MIN: 0.05
       },
       SCORING: {
         DROP: 10,
-        LINE_BASE: 100    // Multiplied by 2^(n-1) for n lines
-      }
+        HARD_DROP_PER_ROW: 2,
+        LINE_BASE: 100
+      },
+      ROWS_PER_LEVEL: 10,
+      LINE_CLEAR_ANIM_MS: 300
     });
 
     // Tetromino definitions with pastel colors
@@ -830,11 +946,13 @@
     // =========================================================================
 
     class Renderer {
-      constructor(mainCanvas, previewCanvas, courtWidth, courtHeight, previewSize) {
+      constructor(mainCanvas, previewCanvas, holdCanvas, courtWidth, courtHeight, previewSize) {
         this.mainCanvas = mainCanvas;
         this.previewCanvas = previewCanvas;
+        this.holdCanvas = holdCanvas;
         this.mainCtx = mainCanvas.getContext('2d');
         this.previewCtx = previewCanvas.getContext('2d');
+        this.holdCtx = holdCanvas.getContext('2d');
         this.courtWidth = courtWidth;
         this.courtHeight = courtHeight;
         this.previewSize = previewSize;
@@ -842,112 +960,79 @@
         this.blockHeight = 0;
 
         this.invalidFlags = {
-          court: true,
-          next: true,
-          score: true,
-          rows: true
+          court: true, next: true, hold: true,
+          score: true, rows: true, level: true, highScore: true
         };
       }
 
-      /**
-       * Update canvas dimensions based on CSS size
-       */
       resize() {
         this.mainCanvas.width = this.mainCanvas.clientWidth;
         this.mainCanvas.height = this.mainCanvas.clientHeight;
         this.previewCanvas.width = this.previewCanvas.clientWidth;
         this.previewCanvas.height = this.previewCanvas.clientHeight;
+        this.holdCanvas.width = this.holdCanvas.clientWidth;
+        this.holdCanvas.height = this.holdCanvas.clientHeight;
 
         this.blockWidth = this.mainCanvas.width / this.courtWidth;
         this.blockHeight = this.mainCanvas.height / this.courtHeight;
-
         this.invalidateAll();
       }
 
-      /**
-       * Mark all areas as needing redraw
-       */
       invalidateAll() {
-        this.invalidFlags.court = true;
-        this.invalidFlags.next = true;
-        this.invalidFlags.score = true;
-        this.invalidFlags.rows = true;
+        for (const key in this.invalidFlags) this.invalidFlags[key] = true;
       }
 
-      /**
-       * Invalidate specific area
-       * @param {string} area - Area name
-       */
       invalidate(area) {
         this.invalidFlags[area] = true;
       }
 
-      /**
-       * Draw a single block with rounded corners and 3D effect
-       * @param {CanvasRenderingContext2D} ctx - Canvas context
-       * @param {number} x - Grid X position
-       * @param {number} y - Grid Y position
-       * @param {string} color - Block color
-       */
-      drawBlock(ctx, x, y, color) {
+      drawBlock(ctx, x, y, color, alpha = 1) {
         const blockX = x * this.blockWidth;
         const blockY = y * this.blockHeight;
         const radius = Math.min(this.blockWidth, this.blockHeight) * 0.15;
+        ctx.globalAlpha = alpha;
 
-        // Main block
         ctx.beginPath();
         ctx.roundRect(blockX + 1, blockY + 1, this.blockWidth - 2, this.blockHeight - 2, radius);
         ctx.fillStyle = color;
         ctx.fill();
 
-        // Inner highlight for 3D effect
         ctx.beginPath();
         ctx.roundRect(blockX + 2, blockY + 2, this.blockWidth - 4, this.blockHeight - 4, radius * 0.8);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.fill();
 
-        // Subtle border
         ctx.beginPath();
         ctx.roundRect(blockX + 1, blockY + 1, this.blockWidth - 2, this.blockHeight - 2, radius);
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.lineWidth = 0.5;
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
 
-      /**
-       * Draw a piece on the canvas
-       * @param {CanvasRenderingContext2D} ctx - Canvas context
-       * @param {Object} type - Piece type
-       * @param {number} x - X position
-       * @param {number} y - Y position
-       * @param {number} dir - Rotation direction
-       */
-      drawPiece(ctx, type, x, y, dir) {
+      drawPiece(ctx, type, x, y, dir, alpha = 1) {
         Piece.eachBlock(type, x, y, dir, (bx, by) => {
-          this.drawBlock(ctx, bx, by, type.color);
+          this.drawBlock(ctx, bx, by, type.color, alpha);
         });
       }
 
-      /**
-       * Render the main game court
-       * @param {GameBoard} board - Game board
-       * @param {Object|null} currentPiece - Current falling piece
-       * @param {boolean} isPlaying - Whether game is active
-       */
-      renderCourt(board, currentPiece, isPlaying) {
+      renderCourt(board, currentPiece, ghostY, isPlaying, flashRows) {
         if (!this.invalidFlags.court) return;
-
         const ctx = this.mainCtx;
         ctx.save();
         ctx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
         ctx.translate(0.5, 0.5);
 
-        // Draw current falling piece
         if (isPlaying && currentPiece) {
+          // Ghost piece
+          if (ghostY !== null && ghostY !== currentPiece.y) {
+            this.drawPiece(ctx, currentPiece.type, currentPiece.x, ghostY, currentPiece.dir, 0.2);
+          }
+          // Current piece
           this.drawPiece(ctx, currentPiece.type, currentPiece.x, currentPiece.y, currentPiece.dir);
         }
 
-        // Draw placed blocks
+        // Placed blocks
         for (let y = 0; y < this.courtHeight; y++) {
           for (let x = 0; x < this.courtWidth; x++) {
             const block = board.getBlock(x, y);
@@ -957,71 +1042,83 @@
           }
         }
 
-        // Subtle court boundary
+        // Line-clear flash overlay
+        if (flashRows && flashRows.length > 0) {
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = '#FFFFFF';
+          for (const row of flashRows) {
+            ctx.fillRect(0, row * this.blockHeight, this.courtWidth * this.blockWidth, this.blockHeight);
+          }
+          ctx.globalAlpha = 1;
+        }
+
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.strokeRect(0, 0, this.courtWidth * this.blockWidth - 1, this.courtHeight * this.blockHeight - 1);
-
         ctx.restore();
         this.invalidFlags.court = false;
       }
 
-      /**
-       * Render the next piece preview
-       * @param {Object} nextPiece - Next piece to display
-       */
-      renderNext(nextPiece) {
-        if (!this.invalidFlags.next || !nextPiece) return;
-
-        const ctx = this.previewCtx;
-        const padding = (this.previewSize - nextPiece.type.size) / 2;
-
+      renderPreview(ctx, canvas, piece, flagKey) {
+        if (!this.invalidFlags[flagKey] || !piece) return;
+        const padding = (this.previewSize - piece.type.size) / 2;
         ctx.save();
         ctx.translate(0.5, 0.5);
-        ctx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
-
-        this.drawPiece(ctx, nextPiece.type, padding, padding, nextPiece.dir);
-
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.strokeRect(0, 0, this.previewSize * this.blockWidth - 1, this.previewSize * this.blockHeight - 1);
-
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.drawPiece(ctx, piece.type, padding, padding, DIRECTIONS.UP);
         ctx.restore();
-        this.invalidFlags.next = false;
+        this.invalidFlags[flagKey] = false;
       }
 
-      /**
-       * Render score display
-       * @param {number} score - Current visual score
-       */
+      renderNext(nextPiece) {
+        this.renderPreview(this.previewCtx, this.previewCanvas, nextPiece, 'next');
+      }
+
+      renderHold(holdPiece) {
+        if (!this.invalidFlags.hold) return;
+        const ctx = this.holdCtx;
+        ctx.save();
+        ctx.clearRect(0, 0, this.holdCanvas.width, this.holdCanvas.height);
+        if (holdPiece) {
+          const padding = (this.previewSize - holdPiece.size) / 2;
+          ctx.translate(0.5, 0.5);
+          this.drawPiece(ctx, holdPiece, padding, padding, DIRECTIONS.UP);
+        }
+        ctx.restore();
+        this.invalidFlags.hold = false;
+      }
+
       renderScore(score) {
         if (!this.invalidFlags.score) return;
         Utils.setHTML('score', Utils.formatScore(score));
         this.invalidFlags.score = false;
       }
 
-      /**
-       * Render rows display
-       * @param {number} rows - Rows cleared
-       */
+      renderHighScore(hs) {
+        if (!this.invalidFlags.highScore) return;
+        Utils.setHTML('high-score', Utils.formatScore(hs));
+        this.invalidFlags.highScore = false;
+      }
+
       renderRows(rows) {
         if (!this.invalidFlags.rows) return;
         Utils.setHTML('rows', rows);
         this.invalidFlags.rows = false;
       }
 
-      /**
-       * Full render pass
-       * @param {GameBoard} board - Game board
-       * @param {Object} currentPiece - Current piece
-       * @param {Object} nextPiece - Next piece
-       * @param {number} score - Visual score
-       * @param {number} rows - Rows cleared
-       * @param {boolean} isPlaying - Game state
-       */
-      render(board, currentPiece, nextPiece, score, rows, isPlaying) {
-        this.renderCourt(board, currentPiece, isPlaying);
+      renderLevel(level) {
+        if (!this.invalidFlags.level) return;
+        Utils.setHTML('level', level);
+        this.invalidFlags.level = false;
+      }
+
+      render(board, currentPiece, nextPiece, holdPiece, ghostY, score, rows, level, highScore, isPlaying, flashRows) {
+        this.renderCourt(board, currentPiece, ghostY, isPlaying, flashRows);
         this.renderNext(nextPiece);
+        this.renderHold(holdPiece);
         this.renderScore(score);
+        this.renderHighScore(highScore);
         this.renderRows(rows);
+        this.renderLevel(level);
       }
     }
 
@@ -1035,85 +1132,34 @@
         this.onAction = onAction;
         this.onPlay = onPlay;
         this.isPlaying = false;
-
         this.handleKeydown = this.handleKeydown.bind(this);
       }
+      start() { document.addEventListener('keydown', this.handleKeydown, false); }
+      stop() { document.removeEventListener('keydown', this.handleKeydown, false); }
+      setPlaying(p) { this.isPlaying = p; }
+      clearActions() { this.actionQueue = []; }
+      getNextAction() { return this.actionQueue.shift(); }
 
-      /**
-       * Start listening for input
-       */
-      start() {
-        document.addEventListener('keydown', this.handleKeydown, false);
-      }
-
-      /**
-       * Stop listening for input
-       */
-      stop() {
-        document.removeEventListener('keydown', this.handleKeydown, false);
-      }
-
-      /**
-       * Set playing state
-       * @param {boolean} playing - Whether game is active
-       */
-      setPlaying(playing) {
-        this.isPlaying = playing;
-      }
-
-      /**
-       * Clear action queue
-       */
-      clearActions() {
-        this.actionQueue = [];
-      }
-
-      /**
-       * Get next queued action
-       * @returns {number|undefined}
-       */
-      getNextAction() {
-        return this.actionQueue.shift();
-      }
-
-      /**
-       * Handle keydown event
-       * @param {KeyboardEvent} event
-       */
       handleKeydown(event) {
         let handled = false;
-
         if (this.isPlaying) {
           switch (event.keyCode) {
-            case KEYS.LEFT:
-              this.actionQueue.push(DIRECTIONS.LEFT);
-              handled = true;
-              break;
-            case KEYS.RIGHT:
-              this.actionQueue.push(DIRECTIONS.RIGHT);
-              handled = true;
-              break;
-            case KEYS.UP:
-              this.actionQueue.push(DIRECTIONS.UP);
-              handled = true;
-              break;
-            case KEYS.DOWN:
-              this.actionQueue.push(DIRECTIONS.DOWN);
-              handled = true;
-              break;
-            case KEYS.ESC:
-              this.onAction('lose');
-              handled = true;
-              break;
+            case KEYS.LEFT: this.actionQueue.push(DIRECTIONS.LEFT); handled = true; break;
+            case KEYS.RIGHT: this.actionQueue.push(DIRECTIONS.RIGHT); handled = true; break;
+            case KEYS.UP: this.actionQueue.push(DIRECTIONS.UP); handled = true; break;
+            case KEYS.DOWN: this.actionQueue.push(DIRECTIONS.DOWN); handled = true; break;
+            case KEYS.SPACE: this.onAction('hardDrop'); handled = true; break;
+            case KEYS.C: this.onAction('hold'); handled = true; break;
+            case KEYS.P: this.onAction('pause'); handled = true; break;
+            case KEYS.ESC: this.onAction('lose'); handled = true; break;
           }
-        } else if (event.keyCode === KEYS.SPACE) {
-          this.onPlay();
-          handled = true;
+        } else {
+          if (event.keyCode === KEYS.ENTER || event.keyCode === KEYS.SPACE) {
+            this.onPlay(); handled = true;
+          }
+          if (event.keyCode === KEYS.P) { this.onAction('pause'); handled = true; }
         }
-
-        if (handled) {
-          event.preventDefault();
-        }
+        if (handled) event.preventDefault();
       }
     }
 
@@ -1123,12 +1169,12 @@
 
     class TetrisEngine {
       constructor() {
-        // Initialize components
         this.board = new GameBoard(GAME_CONFIG.COURT_WIDTH, GAME_CONFIG.COURT_HEIGHT);
         this.pieceBag = new PieceBag();
         this.renderer = new Renderer(
           Utils.getElement('canvas'),
           Utils.getElement('upcoming'),
+          Utils.getElement('hold-canvas'),
           GAME_CONFIG.COURT_WIDTH,
           GAME_CONFIG.COURT_HEIGHT,
           GAME_CONFIG.PREVIEW_SIZE
@@ -1138,199 +1184,248 @@
           () => this.play()
         );
 
-        // Game state
         this.isPlaying = false;
+        this.isPaused = false;
         this.score = 0;
         this.visualScore = 0;
         this.rows = 0;
+        this.level = 1;
         this.dropInterval = GAME_CONFIG.SPEED.START;
         this.dropTimer = 0;
         this.currentPiece = null;
         this.nextPiece = null;
-
-        // Animation frame
+        this.holdPieceType = null;
+        this.hasSwappedThisTurn = false;
+        this.ghostY = null;
+        this.highScore = parseInt(localStorage.getItem('tetris-high-score') || '0', 10);
+        this.isNewHighScore = false;
+        this.flashRows = [];
+        this.flashTimer = 0;
+        this.isFlashing = false;
         this.lastTimestamp = 0;
         this.animationId = null;
 
-        // Bind methods
         this.gameLoop = this.gameLoop.bind(this);
         this.handleResize = this.handleResize.bind(this);
       }
 
-      /**
-       * Initialize and start the game
-       */
       init() {
         this.input.start();
         window.addEventListener('resize', this.handleResize, false);
         this.handleResize();
         this.reset();
+        this.renderer.invalidate('highScore');
         this.lastTimestamp = Utils.now();
         this.gameLoop();
       }
 
-      /**
-       * Handle window resize
-       */
-      handleResize() {
-        this.renderer.resize();
+      handleResize() { this.renderer.resize(); }
+
+      calcSpeed(level) {
+        return Math.max(GAME_CONFIG.SPEED.MIN, GAME_CONFIG.SPEED.START - (level - 1) * 0.07);
       }
 
-      /**
-       * Reset game state
-       */
       reset() {
         this.dropTimer = 0;
         this.board.clear();
         this.input.clearActions();
+        this.holdPieceType = null;
+        this.hasSwappedThisTurn = false;
+        this.isNewHighScore = false;
+        this.flashRows = [];
+        this.isFlashing = false;
+        this.isPaused = false;
+        Utils.getElement('pause-overlay').classList.remove('visible');
+        Utils.getElement('new-hs-label').classList.remove('visible');
         this.setRows(0);
         this.setScore(0);
         this.currentPiece = this.nextPiece || this.pieceBag.getNext();
         this.nextPiece = this.pieceBag.getNext();
+        this.updateGhost();
         this.renderer.invalidateAll();
       }
 
-      /**
-       * Start a new game
-       */
       play() {
+        if (this.isPaused) return;
         Utils.setVisibility('start', false);
         this.reset();
         this.isPlaying = true;
         this.input.setPlaying(true);
       }
 
-      /**
-       * End current game
-       */
       lose() {
         Utils.setVisibility('start', true);
         this.visualScore = this.score;
         this.renderer.invalidate('score');
+        if (this.score > this.highScore) {
+          this.highScore = this.score;
+          localStorage.setItem('tetris-high-score', String(this.highScore));
+          this.isNewHighScore = true;
+          Utils.getElement('new-hs-label').classList.add('visible');
+          this.renderer.invalidate('highScore');
+        }
         this.isPlaying = false;
+        this.isPaused = false;
+        Utils.getElement('pause-overlay').classList.remove('visible');
         this.input.setPlaying(false);
       }
 
-      /**
-       * Handle game actions from input
-       * @param {string} action - Action name
-       */
-      handleGameAction(action) {
-        if (action === 'lose') {
-          this.lose();
+      togglePause() {
+        if (!this.isPlaying && !this.isPaused) return;
+        this.isPaused = !this.isPaused;
+        const overlay = Utils.getElement('pause-overlay');
+        if (this.isPaused) {
+          overlay.classList.add('visible');
+          this.input.setPlaying(false);
+        } else {
+          overlay.classList.remove('visible');
+          this.input.setPlaying(true);
+          this.lastTimestamp = Utils.now();
         }
       }
 
-      /**
-       * Set score
-       * @param {number} value - New score
-       */
+      handleGameAction(action) {
+        switch (action) {
+          case 'lose': this.lose(); break;
+          case 'hardDrop': this.hardDrop(); break;
+          case 'hold': this.hold(); break;
+          case 'pause': this.togglePause(); break;
+        }
+      }
+
       setScore(value) {
         this.score = value;
         this.visualScore = value;
         this.renderer.invalidate('score');
       }
 
-      /**
-       * Add to score
-       * @param {number} value - Points to add
-       */
-      addScore(value) {
-        this.score += value;
-      }
+      addScore(value) { this.score += value; }
 
-      /**
-       * Set rows cleared
-       * @param {number} value - New rows value
-       */
       setRows(value) {
         this.rows = value;
-        this.dropInterval = Math.max(
-          GAME_CONFIG.SPEED.MIN,
-          GAME_CONFIG.SPEED.START - (GAME_CONFIG.SPEED.DECREMENT * value)
-        );
+        this.level = Math.floor(value / GAME_CONFIG.ROWS_PER_LEVEL) + 1;
+        this.dropInterval = this.calcSpeed(this.level);
         this.renderer.invalidate('rows');
+        this.renderer.invalidate('level');
       }
 
-      /**
-       * Add rows cleared
-       * @param {number} value - Rows to add
-       */
-      addRows(value) {
-        this.setRows(this.rows + value);
+      addRows(value) { this.setRows(this.rows + value); }
+
+      updateGhost() {
+        if (!this.currentPiece) { this.ghostY = null; return; }
+        let gy = this.currentPiece.y;
+        while (Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, gy + 1, this.currentPiece.dir)) {
+          gy++;
+        }
+        this.ghostY = gy;
       }
 
-      /**
-       * Move current piece
-       * @param {number} direction - Movement direction
-       * @returns {boolean} Whether move was successful
-       */
       movePiece(direction) {
         let { x, y } = this.currentPiece;
-
         switch (direction) {
-          case DIRECTIONS.LEFT:
-            x -= 1;
-            break;
-          case DIRECTIONS.RIGHT:
-            x += 1;
-            break;
-          case DIRECTIONS.DOWN:
-            y += 1;
-            break;
+          case DIRECTIONS.LEFT: x -= 1; break;
+          case DIRECTIONS.RIGHT: x += 1; break;
+          case DIRECTIONS.DOWN: y += 1; break;
         }
-
         if (Piece.canOccupy(this.board, this.currentPiece.type, x, y, this.currentPiece.dir)) {
           this.currentPiece.x = x;
           this.currentPiece.y = y;
+          this.updateGhost();
           this.renderer.invalidate('court');
           return true;
         }
-
         return false;
       }
 
-      /**
-       * Rotate current piece
-       */
       rotatePiece() {
         const newDir = this.currentPiece.dir === DIRECTIONS.MAX ? DIRECTIONS.MIN : this.currentPiece.dir + 1;
-
         if (Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, newDir)) {
           this.currentPiece.dir = newDir;
+          this.updateGhost();
           this.renderer.invalidate('court');
         }
       }
 
-      /**
-       * Drop piece one row or lock it in place
-       */
-      dropPiece() {
-        if (!this.movePiece(DIRECTIONS.DOWN)) {
-          this.addScore(GAME_CONFIG.SCORING.DROP);
-          this.lockPiece();
+      hardDrop() {
+        if (this.isFlashing) return;
+        this.updateGhost();
+        const rowsDropped = this.ghostY - this.currentPiece.y;
+        this.currentPiece.y = this.ghostY;
+        this.addScore(rowsDropped * GAME_CONFIG.SCORING.HARD_DROP_PER_ROW);
+        this.lockAndAdvance();
+      }
 
-          const linesCleared = this.board.clearCompletedLines();
-          if (linesCleared > 0) {
-            this.addRows(linesCleared);
-            this.addScore(GAME_CONFIG.SCORING.LINE_BASE * Math.pow(2, linesCleared - 1));
-          }
-
+      hold() {
+        if (this.hasSwappedThisTurn || this.isFlashing) return;
+        this.hasSwappedThisTurn = true;
+        const curType = this.currentPiece.type;
+        if (this.holdPieceType) {
+          const maxX = GAME_CONFIG.COURT_WIDTH - this.holdPieceType.size;
+          this.currentPiece = {
+            type: this.holdPieceType,
+            dir: DIRECTIONS.UP,
+            x: Math.min(this.currentPiece.x, maxX),
+            y: 0
+          };
+        } else {
           this.currentPiece = this.nextPiece;
           this.nextPiece = this.pieceBag.getNext();
-          this.input.clearActions();
           this.renderer.invalidate('next');
-
-          // Check for game over
-          if (!Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, this.currentPiece.dir)) {
-            this.lose();
-          }
+        }
+        this.holdPieceType = curType;
+        this.updateGhost();
+        this.renderer.invalidate('hold');
+        this.renderer.invalidate('court');
+        if (!Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, this.currentPiece.dir)) {
+          this.lose();
         }
       }
 
-      /**
-       * Lock current piece into the board
-       */
+      lockAndAdvance() {
+        this.lockPiece();
+        const completedLines = [];
+        for (let y = this.board.height - 1; y >= 0; y--) {
+          if (this.board.isLineComplete(y)) completedLines.push(y);
+        }
+        if (completedLines.length > 0) {
+          this.flashRows = completedLines;
+          this.flashTimer = 0;
+          this.isFlashing = true;
+          this.renderer.invalidate('court');
+        } else {
+          this.advanceToNextPiece();
+        }
+      }
+
+      advanceToNextPiece() {
+        const linesCleared = this.flashRows.length;
+        if (linesCleared > 0) {
+          this.board.clearCompletedLines();
+          this.addRows(linesCleared);
+          this.addScore(GAME_CONFIG.SCORING.LINE_BASE * Math.pow(2, linesCleared - 1));
+        }
+        this.flashRows = [];
+        this.isFlashing = false;
+        this.currentPiece = this.nextPiece;
+        this.nextPiece = this.pieceBag.getNext();
+        this.hasSwappedThisTurn = false;
+        this.input.clearActions();
+        this.updateGhost();
+        this.renderer.invalidate('next');
+        this.renderer.invalidate('court');
+        if (!Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, this.currentPiece.dir)) {
+          this.lose();
+        }
+      }
+
+      dropPiece() {
+        if (this.isFlashing) return;
+        if (!this.movePiece(DIRECTIONS.DOWN)) {
+          this.addScore(GAME_CONFIG.SCORING.DROP);
+          this.lockAndAdvance();
+        }
+      }
+
       lockPiece() {
         Piece.eachBlock(this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, this.currentPiece.dir, (x, y) => {
           this.board.setBlock(x, y, this.currentPiece.type);
@@ -1338,47 +1433,32 @@
         this.renderer.invalidate('court');
       }
 
-      /**
-       * Process queued input action
-       * @param {number} action - Action direction
-       */
       processAction(action) {
+        if (this.isFlashing) return;
         switch (action) {
-          case DIRECTIONS.LEFT:
-            this.movePiece(DIRECTIONS.LEFT);
-            break;
-          case DIRECTIONS.RIGHT:
-            this.movePiece(DIRECTIONS.RIGHT);
-            break;
-          case DIRECTIONS.UP:
-            this.rotatePiece();
-            break;
-          case DIRECTIONS.DOWN:
-            this.dropPiece();
-            break;
+          case DIRECTIONS.LEFT: this.movePiece(DIRECTIONS.LEFT); break;
+          case DIRECTIONS.RIGHT: this.movePiece(DIRECTIONS.RIGHT); break;
+          case DIRECTIONS.UP: this.rotatePiece(); break;
+          case DIRECTIONS.DOWN: this.dropPiece(); break;
         }
       }
 
-      /**
-       * Update game logic
-       * @param {number} deltaTime - Time since last update (seconds)
-       */
       update(deltaTime) {
-        if (!this.isPlaying) return;
-
-        // Animate score counter
+        if (!this.isPlaying || this.isPaused) return;
+        if (this.isFlashing) {
+          this.flashTimer += deltaTime * 1000;
+          this.renderer.invalidate('court');
+          if (this.flashTimer >= GAME_CONFIG.LINE_CLEAR_ANIM_MS) {
+            this.advanceToNextPiece();
+          }
+          return;
+        }
         if (this.visualScore < this.score) {
           this.visualScore = Math.min(this.score, this.visualScore + 1);
           this.renderer.invalidate('score');
         }
-
-        // Process input
         const action = this.input.getNextAction();
-        if (action !== undefined) {
-          this.processAction(action);
-        }
-
-        // Auto-drop
+        if (action !== undefined) this.processAction(action);
         this.dropTimer += deltaTime;
         if (this.dropTimer >= this.dropInterval) {
           this.dropTimer -= this.dropInterval;
@@ -1386,24 +1466,17 @@
         }
       }
 
-      /**
-       * Main game loop
-       */
       gameLoop() {
         const currentTime = Utils.now();
         const deltaTime = Math.min(1, (currentTime - this.lastTimestamp) / 1000);
         this.lastTimestamp = currentTime;
-
         this.update(deltaTime);
         this.renderer.render(
-          this.board,
-          this.currentPiece,
-          this.nextPiece,
-          this.visualScore,
-          this.rows,
-          this.isPlaying
+          this.board, this.currentPiece, this.nextPiece,
+          this.holdPieceType, this.ghostY, this.visualScore,
+          this.rows, this.level, this.highScore, this.isPlaying,
+          this.isFlashing ? this.flashRows : null
         );
-
         this.animationId = requestAnimationFrame(this.gameLoop);
       }
     }
@@ -1421,6 +1494,8 @@
         this.rotateBtn = Utils.getElement('touch-rotate');
         this.rightBtn = Utils.getElement('touch-right');
         this.dropBtn = Utils.getElement('touch-drop');
+        this.hardDropBtn = Utils.getElement('touch-harddrop');
+        this.holdBtn = Utils.getElement('touch-hold');
         this.gameControls = document.querySelectorAll('.game-controls');
         this.isVisible = false;
 
@@ -1512,6 +1587,16 @@
         this.dropBtn.addEventListener('touchstart', (e) => {
           e.preventDefault();
           this.game.input.actionQueue.push(DIRECTIONS.DOWN);
+        }, { passive: false });
+
+        this.hardDropBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.handleGameAction('hardDrop');
+        }, { passive: false });
+
+        this.holdBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.handleGameAction('hold');
         }, { passive: false });
       }
 
