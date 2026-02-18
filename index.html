@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris</title>
+  <style>
+    :root {
+      /* Pastel Color Palette */
+      --pastel-pink: #FFD1DC;
+      --pastel-blue: #AEC6CF;
+      --pastel-mint: #B5EAD7;
+      --pastel-lavender: #E0BBE4;
+      --pastel-peach: #FFDAB9;
+      --pastel-yellow: #FFFACD;
+      --pastel-coral: #FFB7B2;
+
+      /* Tetromino Colors - Soft Pastels */
+      --cyan-pastel: #A8E6CF;
+      --blue-pastel: #9BB8ED;
+      --orange-pastel: #FFD4A3;
+      --yellow-pastel: #FFF4B8;
+      --green-pastel: #C7EECF;
+      --purple-pastel: #D4A5E8;
+      --red-pastel: #FFAAA5;
+
+      /* UI Colors */
+      --bg-primary: #FBF7F4;
+      --bg-secondary: #FFFFFF;
+      --text-primary: #5A5A6E;
+      --text-secondary: #8E8EA0;
+      --border-color: #E8E4E0;
+      --shadow-soft: rgba(0, 0, 0, 0.04);
+      --shadow-medium: rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #FBF7F4 0%, #F5F0EC 50%, #FBF7F4 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      gap: 20px;
+      color: var(--text-primary);
+    }
+
+    #tetris {
+      display: flex;
+      gap: 24px;
+      padding: 32px;
+      background: var(--bg-secondary);
+      border-radius: 24px;
+      box-shadow:
+        0 4px 24px var(--shadow-soft),
+        0 1px 4px var(--shadow-medium);
+      border: 1px solid var(--border-color);
+    }
+
+    #menu {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 140px;
+    }
+
+    .game-title {
+      font-size: 1.5em;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    #start {
+      text-align: center;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, var(--pastel-mint) 0%, var(--pastel-blue) 100%);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    #start:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(174, 198, 207, 0.3);
+    }
+
+    #start a {
+      text-decoration: none;
+      color: var(--text-primary);
+      font-weight: 500;
+      font-size: 0.9em;
+    }
+
+    .next-piece-container {
+      text-align: center;
+    }
+
+    .section-label {
+      font-size: 0.75em;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    #upcoming {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #FAFAFA 0%, #FFFFFF 100%);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    #score {
+      color: var(--purple-pastel);
+      background: linear-gradient(135deg, #D4A5E8 0%, #9BB8ED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #rows {
+      color: var(--cyan-pastel);
+      background: linear-gradient(135deg, #A8E6CF 0%, #9BB8ED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #canvas {
+      display: block;
+      background: linear-gradient(180deg, #FCFCFC 0%, #F8F8F8 100%);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.02),
+        0 4px 16px var(--shadow-soft);
+      background-image:
+        linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+      background-size: 10% 5%;
+    }
+
+    .controls-hint {
+      font-size: 0.7em;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: auto;
+      line-height: 1.6;
+    }
+
+    .controls-hint kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9em;
+    }
+
+    /* Responsive Design */
+    @media screen and (min-width: 0px) and (min-height: 0px) {
+      #tetris {
+        font-size: 0.75em;
+      }
+
+      #menu {
+        min-width: 100px;
+      }
+
+      #upcoming {
+        width: 50px;
+        height: 50px;
+      }
+
+      #canvas {
+        width: 100px;
+        height: 200px;
+      }
+    }
+
+    @media screen and (min-width: 400px) and (min-height: 400px) {
+      #tetris {
+        font-size: 0.85em;
+      }
+
+      #menu {
+        min-width: 120px;
+      }
+
+      #upcoming {
+        width: 60px;
+        height: 60px;
+      }
+
+      #canvas {
+        width: 130px;
+        height: 260px;
+      }
+    }
+
+    @media screen and (min-width: 500px) and (min-height: 500px) {
+      #tetris {
+        font-size: 1em;
+      }
+
+      #menu {
+        min-width: 140px;
+      }
+
+      #upcoming {
+        width: 80px;
+        height: 80px;
+      }
+
+      #canvas {
+        width: 160px;
+        height: 320px;
+      }
+    }
+
+    @media screen and (min-width: 600px) and (min-height: 600px) {
+      #tetris {
+        font-size: 1.1em;
+      }
+
+      #menu {
+        min-width: 160px;
+      }
+
+      #upcoming {
+        width: 100px;
+        height: 100px;
+      }
+
+      #canvas {
+        width: 200px;
+        height: 400px;
+      }
+    }
+
+    @media screen and (min-width: 700px) and (min-height: 700px) {
+      #tetris {
+        font-size: 1.2em;
+      }
+
+      #menu {
+        min-width: 180px;
+      }
+
+      #upcoming {
+        width: 110px;
+        height: 110px;
+      }
+
+      #canvas {
+        width: 240px;
+        height: 480px;
+      }
+    }
+
+    @media screen and (min-width: 800px) and (min-height: 800px) {
+      #tetris {
+        font-size: 1.3em;
+      }
+
+      #menu {
+        min-width: 200px;
+      }
+
+      #upcoming {
+        width: 130px;
+        height: 130px;
+      }
+
+      #canvas {
+        width: 280px;
+        height: 560px;
+      }
+    }
+
+    @media screen and (min-width: 900px) and (min-height: 900px) {
+      #tetris {
+        font-size: 1.4em;
+      }
+
+      #menu {
+        min-width: 220px;
+      }
+
+      #upcoming {
+        width: 150px;
+        height: 150px;
+      }
+
+      #canvas {
+        width: 320px;
+        height: 640px;
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    #start.playing {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* =========================================
+       TOUCH CONTROLS - Mobile/Tablet Only
+       ========================================= */
+
+    #touch-controls {
+      display: none;
+      width: 100%;
+      max-width: 400px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      box-shadow:
+        0 4px 24px var(--shadow-soft),
+        0 1px 4px var(--shadow-medium);
+      border: 1px solid var(--border-color);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #touch-controls.visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .touch-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .touch-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 60px;
+      border: none;
+      border-radius: 14px;
+      font-size: 24px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .touch-btn:active {
+      transform: scale(0.92);
+    }
+
+    .touch-btn-left {
+      grid-column: 1;
+      grid-row: 1;
+      background: linear-gradient(135deg, var(--pastel-blue) 0%, #8BADD9 100%);
+      color: #4A6B8A;
+    }
+
+    .touch-btn-rotate {
+      grid-column: 2;
+      grid-row: 1;
+      background: linear-gradient(135deg, var(--pastel-lavender) 0%, #C9A0D0 100%);
+      color: #7A5A82;
+    }
+
+    .touch-btn-right {
+      grid-column: 3;
+      grid-row: 1;
+      background: linear-gradient(135deg, var(--pastel-blue) 0%, #8BADD9 100%);
+      color: #4A6B8A;
+    }
+
+    .touch-btn-drop {
+      grid-column: 2;
+      grid-row: 2;
+      background: linear-gradient(135deg, var(--pastel-mint) 0%, #8ED4B8 100%);
+      color: #4A8A6B;
+    }
+
+    .touch-btn-play {
+      grid-column: 1 / 4;
+      grid-row: 1 / 3;
+      background: linear-gradient(135deg, var(--pastel-mint) 0%, var(--pastel-blue) 100%);
+      color: var(--text-primary);
+      font-size: 18px;
+    }
+
+    .touch-btn-play.hidden {
+      display: none;
+    }
+
+    .game-controls.hidden {
+      display: none;
+    }
+
+    /* Responsive touch controls */
+    @media screen and (max-width: 500px) {
+      #touch-controls {
+        max-width: 100%;
+        border-radius: 16px;
+      }
+
+      .touch-btn {
+        height: 55px;
+        font-size: 22px;
+      }
+    }
+
+    @media screen and (min-width: 600px) {
+      .touch-btn {
+        height: 70px;
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="tetris">
+    <div id="menu">
+      <h1 class="game-title">Tetris</h1>
+      <p id="start"><a href="javascript:TetrisGame.play();">Press Space to Play</a></p>
+
+      <div class="next-piece-container">
+        <p class="section-label">Next</p>
+        <canvas id="upcoming"></canvas>
+      </div>
+
+      <div class="stat-card">
+        <p class="section-label">Score</p>
+        <p class="stat-value"><span id="score">00000</span></p>
+      </div>
+
+      <div class="stat-card">
+        <p class="section-label">Rows</p>
+        <p class="stat-value"><span id="rows">0</span></p>
+      </div>
+
+      <div class="controls-hint">
+        <kbd>←</kbd> <kbd>→</kbd> Move<br>
+        <kbd>↑</kbd> Rotate <kbd>↓</kbd> Drop<br>
+        <kbd>Esc</kbd> End game
+      </div>
+    </div>
+
+    <canvas id="canvas">
+      Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
+    </canvas>
+  </div>
+
+  <!-- Touch Controls for Mobile/Tablet -->
+  <div id="touch-controls">
+    <div class="touch-controls-grid">
+      <button class="touch-btn touch-btn-play" id="touch-play">▶ TAP TO PLAY</button>
+      <button class="touch-btn touch-btn-left game-controls hidden" id="touch-left">◀</button>
+      <button class="touch-btn touch-btn-rotate game-controls hidden" id="touch-rotate">↻</button>
+      <button class="touch-btn touch-btn-right game-controls hidden" id="touch-right">▶</button>
+      <button class="touch-btn touch-btn-drop game-controls hidden" id="touch-drop">▼</button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Tetris Game - Refactored ES6+ Version
+     * Fully offline, no external dependencies
+     */
+
+    // =========================================================================
+    // CONSTANTS
+    // =========================================================================
+
+    const KEYS = Object.freeze({
+      ESC: 27,
+      SPACE: 32,
+      LEFT: 37,
+      UP: 38,
+      RIGHT: 39,
+      DOWN: 40
+    });
+
+    const DIRECTIONS = Object.freeze({
+      UP: 0,
+      RIGHT: 1,
+      DOWN: 2,
+      LEFT: 3,
+      MIN: 0,
+      MAX: 3
+    });
+
+    const GAME_CONFIG = Object.freeze({
+      COURT_WIDTH: 10,    // Width in blocks
+      COURT_HEIGHT: 20,   // Height in blocks
+      PREVIEW_SIZE: 5,    // Preview area size in blocks
+      SPEED: {
+        START: 0.6,       // Initial drop interval (seconds)
+        DECREMENT: 0.005, // Speed increase per row cleared
+        MIN: 0.1          // Maximum speed (minimum interval)
+      },
+      SCORING: {
+        DROP: 10,
+        LINE_BASE: 100    // Multiplied by 2^(n-1) for n lines
+      }
+    });
+
+    // Tetromino definitions with pastel colors
+    const TETROMINOES = Object.freeze({
+      I: { size: 4, blocks: [0x0F00, 0x2222, 0x00F0, 0x4444], color: '#A8E6CF' },
+      J: { size: 3, blocks: [0x44C0, 0x8E00, 0x6440, 0x0E20], color: '#9BB8ED' },
+      L: { size: 3, blocks: [0x4460, 0x0E80, 0xC440, 0x2E00], color: '#FFD4A3' },
+      O: { size: 2, blocks: [0xCC00, 0xCC00, 0xCC00, 0xCC00], color: '#FFF4B8' },
+      S: { size: 3, blocks: [0x06C0, 0x8C40, 0x6C00, 0x4620], color: '#C7EECF' },
+      T: { size: 3, blocks: [0x0E40, 0x4C40, 0x4E00, 0x4640], color: '#D4A5E8' },
+      Z: { size: 3, blocks: [0x0C60, 0x4C80, 0xC600, 0x2640], color: '#FFAAA5' }
+    });
+
+    // =========================================================================
+    // UTILITY FUNCTIONS
+    // =========================================================================
+
+    const Utils = {
+      /**
+       * Get DOM element by ID
+       * @param {string} id - Element ID
+       * @returns {HTMLElement}
+       */
+      getElement(id) {
+        return document.getElementById(id);
+      },
+
+      /**
+       * Set element visibility
+       * @param {string} id - Element ID
+       * @param {boolean} visible - Whether element should be visible
+       */
+      setVisibility(id, visible) {
+        this.getElement(id).style.visibility = visible ? 'visible' : 'hidden';
+      },
+
+      /**
+       * Set element inner HTML
+       * @param {string} id - Element ID
+       * @param {string} content - HTML content
+       */
+      setHTML(id, content) {
+        this.getElement(id).innerHTML = content;
+      },
+
+      /**
+       * Get current timestamp
+       * @returns {number}
+       */
+      now() {
+        return performance.now();
+      },
+
+      /**
+       * Generate random number in range
+       * @param {number} min - Minimum value (inclusive)
+       * @param {number} max - Maximum value (exclusive)
+       * @returns {number}
+       */
+      random(min, max) {
+        return min + Math.random() * (max - min);
+      },
+
+      /**
+       * Format score with leading zeros
+       * @param {number} score - Score value
+       * @param {number} digits - Number of digits
+       * @returns {string}
+       */
+      formatScore(score, digits = 5) {
+        return String(Math.floor(score)).padStart(digits, '0');
+      }
+    };
+
+    // =========================================================================
+    // PIECE BAG - Random piece generator using 7-bag system
+    // =========================================================================
+
+    class PieceBag {
+      constructor() {
+        this.pieces = [];
+        this.tetrominoTypes = Object.values(TETROMINOES);
+      }
+
+      /**
+       * Refill bag with 4 copies of each piece (28 total)
+       */
+      refill() {
+        this.pieces = [];
+        for (const type of this.tetrominoTypes) {
+          for (let i = 0; i < 4; i++) {
+            this.pieces.push(type);
+          }
+        }
+      }
+
+      /**
+       * Get next random piece from bag
+       * @returns {{type: Object, dir: number, x: number, y: number}}
+       */
+      getNext() {
+        if (this.pieces.length === 0) {
+          this.refill();
+        }
+
+        const index = Math.floor(Utils.random(0, this.pieces.length));
+        const type = this.pieces.splice(index, 1)[0];
+        const maxX = GAME_CONFIG.COURT_WIDTH - type.size;
+
+        return {
+          type,
+          dir: DIRECTIONS.UP,
+          x: Math.round(Utils.random(0, maxX)),
+          y: 0
+        };
+      }
+    }
+
+    // =========================================================================
+    // GAME BOARD - Manages the playing field
+    // =========================================================================
+
+    class GameBoard {
+      constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.grid = [];
+        this.clear();
+      }
+
+      /**
+       * Clear the entire board
+       */
+      clear() {
+        this.grid = Array.from({ length: this.width }, () =>
+          Array(this.height).fill(null)
+        );
+      }
+
+      /**
+       * Get block at position
+       * @param {number} x - X coordinate
+       * @param {number} y - Y coordinate
+       * @returns {Object|null}
+       */
+      getBlock(x, y) {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+          return null;
+        }
+        return this.grid[x][y];
+      }
+
+      /**
+       * Set block at position
+       * @param {number} x - X coordinate
+       * @param {number} y - Y coordinate
+       * @param {Object|null} type - Block type or null to clear
+       */
+      setBlock(x, y, type) {
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+          this.grid[x][y] = type;
+        }
+      }
+
+      /**
+       * Check if position is occupied
+       * @param {number} x - X coordinate
+       * @param {number} y - Y coordinate
+       * @returns {boolean}
+       */
+      isOccupied(x, y) {
+        return x < 0 || x >= this.width || y < 0 || y >= this.height || this.getBlock(x, y) !== null;
+      }
+
+      /**
+       * Check if a line is complete
+       * @param {number} y - Row index
+       * @returns {boolean}
+       */
+      isLineComplete(y) {
+        for (let x = 0; x < this.width; x++) {
+          if (!this.getBlock(x, y)) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      /**
+       * Remove a line and shift everything above down
+       * @param {number} lineY - Row index to remove
+       */
+      removeLine(lineY) {
+        for (let y = lineY; y > 0; y--) {
+          for (let x = 0; x < this.width; x++) {
+            this.grid[x][y] = this.grid[x][y - 1];
+          }
+        }
+        // Clear top row
+        for (let x = 0; x < this.width; x++) {
+          this.grid[x][0] = null;
+        }
+      }
+
+      /**
+       * Clear completed lines and return count
+       * @returns {number} Number of lines cleared
+       */
+      clearCompletedLines() {
+        let linesCleared = 0;
+
+        for (let y = this.height - 1; y >= 0; y--) {
+          if (this.isLineComplete(y)) {
+            this.removeLine(y);
+            y++; // Recheck this row since lines shifted down
+            linesCleared++;
+          }
+        }
+
+        return linesCleared;
+      }
+    }
+
+    // =========================================================================
+    // PIECE - Represents a tetromino piece
+    // =========================================================================
+
+    class Piece {
+      /**
+       * Iterate through each occupied block of a piece
+       * @param {Object} type - Piece type
+       * @param {number} x - X position
+       * @param {number} y - Y position
+       * @param {number} dir - Rotation direction
+       * @param {Function} callback - Callback for each block (x, y)
+       */
+      static eachBlock(type, x, y, dir, callback) {
+        const blocks = type.blocks[dir];
+        let row = 0;
+        let col = 0;
+
+        for (let bit = 0x8000; bit > 0; bit >>= 1) {
+          if (blocks & bit) {
+            callback(x + col, y + row);
+          }
+          if (++col === 4) {
+            col = 0;
+            row++;
+          }
+        }
+      }
+
+      /**
+       * Check if piece can occupy position
+       * @param {GameBoard} board - Game board
+       * @param {Object} type - Piece type
+       * @param {number} x - X position
+       * @param {number} y - Y position
+       * @param {number} dir - Rotation direction
+       * @returns {boolean}
+       */
+      static canOccupy(board, type, x, y, dir) {
+        let canFit = true;
+
+        this.eachBlock(type, x, y, dir, (bx, by) => {
+          if (board.isOccupied(bx, by)) {
+            canFit = false;
+          }
+        });
+
+        return canFit;
+      }
+    }
+
+    // =========================================================================
+    // RENDERER - Handles all canvas drawing
+    // =========================================================================
+
+    class Renderer {
+      constructor(mainCanvas, previewCanvas, courtWidth, courtHeight, previewSize) {
+        this.mainCanvas = mainCanvas;
+        this.previewCanvas = previewCanvas;
+        this.mainCtx = mainCanvas.getContext('2d');
+        this.previewCtx = previewCanvas.getContext('2d');
+        this.courtWidth = courtWidth;
+        this.courtHeight = courtHeight;
+        this.previewSize = previewSize;
+        this.blockWidth = 0;
+        this.blockHeight = 0;
+
+        this.invalidFlags = {
+          court: true,
+          next: true,
+          score: true,
+          rows: true
+        };
+      }
+
+      /**
+       * Update canvas dimensions based on CSS size
+       */
+      resize() {
+        this.mainCanvas.width = this.mainCanvas.clientWidth;
+        this.mainCanvas.height = this.mainCanvas.clientHeight;
+        this.previewCanvas.width = this.previewCanvas.clientWidth;
+        this.previewCanvas.height = this.previewCanvas.clientHeight;
+
+        this.blockWidth = this.mainCanvas.width / this.courtWidth;
+        this.blockHeight = this.mainCanvas.height / this.courtHeight;
+
+        this.invalidateAll();
+      }
+
+      /**
+       * Mark all areas as needing redraw
+       */
+      invalidateAll() {
+        this.invalidFlags.court = true;
+        this.invalidFlags.next = true;
+        this.invalidFlags.score = true;
+        this.invalidFlags.rows = true;
+      }
+
+      /**
+       * Invalidate specific area
+       * @param {string} area - Area name
+       */
+      invalidate(area) {
+        this.invalidFlags[area] = true;
+      }
+
+      /**
+       * Draw a single block with rounded corners and 3D effect
+       * @param {CanvasRenderingContext2D} ctx - Canvas context
+       * @param {number} x - Grid X position
+       * @param {number} y - Grid Y position
+       * @param {string} color - Block color
+       */
+      drawBlock(ctx, x, y, color) {
+        const blockX = x * this.blockWidth;
+        const blockY = y * this.blockHeight;
+        const radius = Math.min(this.blockWidth, this.blockHeight) * 0.15;
+
+        // Main block
+        ctx.beginPath();
+        ctx.roundRect(blockX + 1, blockY + 1, this.blockWidth - 2, this.blockHeight - 2, radius);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // Inner highlight for 3D effect
+        ctx.beginPath();
+        ctx.roundRect(blockX + 2, blockY + 2, this.blockWidth - 4, this.blockHeight - 4, radius * 0.8);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fill();
+
+        // Subtle border
+        ctx.beginPath();
+        ctx.roundRect(blockX + 1, blockY + 1, this.blockWidth - 2, this.blockHeight - 2, radius);
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+
+      /**
+       * Draw a piece on the canvas
+       * @param {CanvasRenderingContext2D} ctx - Canvas context
+       * @param {Object} type - Piece type
+       * @param {number} x - X position
+       * @param {number} y - Y position
+       * @param {number} dir - Rotation direction
+       */
+      drawPiece(ctx, type, x, y, dir) {
+        Piece.eachBlock(type, x, y, dir, (bx, by) => {
+          this.drawBlock(ctx, bx, by, type.color);
+        });
+      }
+
+      /**
+       * Render the main game court
+       * @param {GameBoard} board - Game board
+       * @param {Object|null} currentPiece - Current falling piece
+       * @param {boolean} isPlaying - Whether game is active
+       */
+      renderCourt(board, currentPiece, isPlaying) {
+        if (!this.invalidFlags.court) return;
+
+        const ctx = this.mainCtx;
+        ctx.save();
+        ctx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
+        ctx.translate(0.5, 0.5);
+
+        // Draw current falling piece
+        if (isPlaying && currentPiece) {
+          this.drawPiece(ctx, currentPiece.type, currentPiece.x, currentPiece.y, currentPiece.dir);
+        }
+
+        // Draw placed blocks
+        for (let y = 0; y < this.courtHeight; y++) {
+          for (let x = 0; x < this.courtWidth; x++) {
+            const block = board.getBlock(x, y);
+            if (block) {
+              this.drawBlock(ctx, x, y, block.color);
+            }
+          }
+        }
+
+        // Subtle court boundary
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.strokeRect(0, 0, this.courtWidth * this.blockWidth - 1, this.courtHeight * this.blockHeight - 1);
+
+        ctx.restore();
+        this.invalidFlags.court = false;
+      }
+
+      /**
+       * Render the next piece preview
+       * @param {Object} nextPiece - Next piece to display
+       */
+      renderNext(nextPiece) {
+        if (!this.invalidFlags.next || !nextPiece) return;
+
+        const ctx = this.previewCtx;
+        const padding = (this.previewSize - nextPiece.type.size) / 2;
+
+        ctx.save();
+        ctx.translate(0.5, 0.5);
+        ctx.clearRect(0, 0, this.previewCanvas.width, this.previewCanvas.height);
+
+        this.drawPiece(ctx, nextPiece.type, padding, padding, nextPiece.dir);
+
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.strokeRect(0, 0, this.previewSize * this.blockWidth - 1, this.previewSize * this.blockHeight - 1);
+
+        ctx.restore();
+        this.invalidFlags.next = false;
+      }
+
+      /**
+       * Render score display
+       * @param {number} score - Current visual score
+       */
+      renderScore(score) {
+        if (!this.invalidFlags.score) return;
+        Utils.setHTML('score', Utils.formatScore(score));
+        this.invalidFlags.score = false;
+      }
+
+      /**
+       * Render rows display
+       * @param {number} rows - Rows cleared
+       */
+      renderRows(rows) {
+        if (!this.invalidFlags.rows) return;
+        Utils.setHTML('rows', rows);
+        this.invalidFlags.rows = false;
+      }
+
+      /**
+       * Full render pass
+       * @param {GameBoard} board - Game board
+       * @param {Object} currentPiece - Current piece
+       * @param {Object} nextPiece - Next piece
+       * @param {number} score - Visual score
+       * @param {number} rows - Rows cleared
+       * @param {boolean} isPlaying - Game state
+       */
+      render(board, currentPiece, nextPiece, score, rows, isPlaying) {
+        this.renderCourt(board, currentPiece, isPlaying);
+        this.renderNext(nextPiece);
+        this.renderScore(score);
+        this.renderRows(rows);
+      }
+    }
+
+    // =========================================================================
+    // INPUT HANDLER - Manages keyboard input
+    // =========================================================================
+
+    class InputHandler {
+      constructor(onAction, onPlay) {
+        this.actionQueue = [];
+        this.onAction = onAction;
+        this.onPlay = onPlay;
+        this.isPlaying = false;
+
+        this.handleKeydown = this.handleKeydown.bind(this);
+      }
+
+      /**
+       * Start listening for input
+       */
+      start() {
+        document.addEventListener('keydown', this.handleKeydown, false);
+      }
+
+      /**
+       * Stop listening for input
+       */
+      stop() {
+        document.removeEventListener('keydown', this.handleKeydown, false);
+      }
+
+      /**
+       * Set playing state
+       * @param {boolean} playing - Whether game is active
+       */
+      setPlaying(playing) {
+        this.isPlaying = playing;
+      }
+
+      /**
+       * Clear action queue
+       */
+      clearActions() {
+        this.actionQueue = [];
+      }
+
+      /**
+       * Get next queued action
+       * @returns {number|undefined}
+       */
+      getNextAction() {
+        return this.actionQueue.shift();
+      }
+
+      /**
+       * Handle keydown event
+       * @param {KeyboardEvent} event
+       */
+      handleKeydown(event) {
+        let handled = false;
+
+        if (this.isPlaying) {
+          switch (event.keyCode) {
+            case KEYS.LEFT:
+              this.actionQueue.push(DIRECTIONS.LEFT);
+              handled = true;
+              break;
+            case KEYS.RIGHT:
+              this.actionQueue.push(DIRECTIONS.RIGHT);
+              handled = true;
+              break;
+            case KEYS.UP:
+              this.actionQueue.push(DIRECTIONS.UP);
+              handled = true;
+              break;
+            case KEYS.DOWN:
+              this.actionQueue.push(DIRECTIONS.DOWN);
+              handled = true;
+              break;
+            case KEYS.ESC:
+              this.onAction('lose');
+              handled = true;
+              break;
+          }
+        } else if (event.keyCode === KEYS.SPACE) {
+          this.onPlay();
+          handled = true;
+        }
+
+        if (handled) {
+          event.preventDefault();
+        }
+      }
+    }
+
+    // =========================================================================
+    // GAME ENGINE - Main game controller
+    // =========================================================================
+
+    class TetrisEngine {
+      constructor() {
+        // Initialize components
+        this.board = new GameBoard(GAME_CONFIG.COURT_WIDTH, GAME_CONFIG.COURT_HEIGHT);
+        this.pieceBag = new PieceBag();
+        this.renderer = new Renderer(
+          Utils.getElement('canvas'),
+          Utils.getElement('upcoming'),
+          GAME_CONFIG.COURT_WIDTH,
+          GAME_CONFIG.COURT_HEIGHT,
+          GAME_CONFIG.PREVIEW_SIZE
+        );
+        this.input = new InputHandler(
+          (action) => this.handleGameAction(action),
+          () => this.play()
+        );
+
+        // Game state
+        this.isPlaying = false;
+        this.score = 0;
+        this.visualScore = 0;
+        this.rows = 0;
+        this.dropInterval = GAME_CONFIG.SPEED.START;
+        this.dropTimer = 0;
+        this.currentPiece = null;
+        this.nextPiece = null;
+
+        // Animation frame
+        this.lastTimestamp = 0;
+        this.animationId = null;
+
+        // Bind methods
+        this.gameLoop = this.gameLoop.bind(this);
+        this.handleResize = this.handleResize.bind(this);
+      }
+
+      /**
+       * Initialize and start the game
+       */
+      init() {
+        this.input.start();
+        window.addEventListener('resize', this.handleResize, false);
+        this.handleResize();
+        this.reset();
+        this.lastTimestamp = Utils.now();
+        this.gameLoop();
+      }
+
+      /**
+       * Handle window resize
+       */
+      handleResize() {
+        this.renderer.resize();
+      }
+
+      /**
+       * Reset game state
+       */
+      reset() {
+        this.dropTimer = 0;
+        this.board.clear();
+        this.input.clearActions();
+        this.setRows(0);
+        this.setScore(0);
+        this.currentPiece = this.nextPiece || this.pieceBag.getNext();
+        this.nextPiece = this.pieceBag.getNext();
+        this.renderer.invalidateAll();
+      }
+
+      /**
+       * Start a new game
+       */
+      play() {
+        Utils.setVisibility('start', false);
+        this.reset();
+        this.isPlaying = true;
+        this.input.setPlaying(true);
+      }
+
+      /**
+       * End current game
+       */
+      lose() {
+        Utils.setVisibility('start', true);
+        this.visualScore = this.score;
+        this.renderer.invalidate('score');
+        this.isPlaying = false;
+        this.input.setPlaying(false);
+      }
+
+      /**
+       * Handle game actions from input
+       * @param {string} action - Action name
+       */
+      handleGameAction(action) {
+        if (action === 'lose') {
+          this.lose();
+        }
+      }
+
+      /**
+       * Set score
+       * @param {number} value - New score
+       */
+      setScore(value) {
+        this.score = value;
+        this.visualScore = value;
+        this.renderer.invalidate('score');
+      }
+
+      /**
+       * Add to score
+       * @param {number} value - Points to add
+       */
+      addScore(value) {
+        this.score += value;
+      }
+
+      /**
+       * Set rows cleared
+       * @param {number} value - New rows value
+       */
+      setRows(value) {
+        this.rows = value;
+        this.dropInterval = Math.max(
+          GAME_CONFIG.SPEED.MIN,
+          GAME_CONFIG.SPEED.START - (GAME_CONFIG.SPEED.DECREMENT * value)
+        );
+        this.renderer.invalidate('rows');
+      }
+
+      /**
+       * Add rows cleared
+       * @param {number} value - Rows to add
+       */
+      addRows(value) {
+        this.setRows(this.rows + value);
+      }
+
+      /**
+       * Move current piece
+       * @param {number} direction - Movement direction
+       * @returns {boolean} Whether move was successful
+       */
+      movePiece(direction) {
+        let { x, y } = this.currentPiece;
+
+        switch (direction) {
+          case DIRECTIONS.LEFT:
+            x -= 1;
+            break;
+          case DIRECTIONS.RIGHT:
+            x += 1;
+            break;
+          case DIRECTIONS.DOWN:
+            y += 1;
+            break;
+        }
+
+        if (Piece.canOccupy(this.board, this.currentPiece.type, x, y, this.currentPiece.dir)) {
+          this.currentPiece.x = x;
+          this.currentPiece.y = y;
+          this.renderer.invalidate('court');
+          return true;
+        }
+
+        return false;
+      }
+
+      /**
+       * Rotate current piece
+       */
+      rotatePiece() {
+        const newDir = this.currentPiece.dir === DIRECTIONS.MAX ? DIRECTIONS.MIN : this.currentPiece.dir + 1;
+
+        if (Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, newDir)) {
+          this.currentPiece.dir = newDir;
+          this.renderer.invalidate('court');
+        }
+      }
+
+      /**
+       * Drop piece one row or lock it in place
+       */
+      dropPiece() {
+        if (!this.movePiece(DIRECTIONS.DOWN)) {
+          this.addScore(GAME_CONFIG.SCORING.DROP);
+          this.lockPiece();
+
+          const linesCleared = this.board.clearCompletedLines();
+          if (linesCleared > 0) {
+            this.addRows(linesCleared);
+            this.addScore(GAME_CONFIG.SCORING.LINE_BASE * Math.pow(2, linesCleared - 1));
+          }
+
+          this.currentPiece = this.nextPiece;
+          this.nextPiece = this.pieceBag.getNext();
+          this.input.clearActions();
+          this.renderer.invalidate('next');
+
+          // Check for game over
+          if (!Piece.canOccupy(this.board, this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, this.currentPiece.dir)) {
+            this.lose();
+          }
+        }
+      }
+
+      /**
+       * Lock current piece into the board
+       */
+      lockPiece() {
+        Piece.eachBlock(this.currentPiece.type, this.currentPiece.x, this.currentPiece.y, this.currentPiece.dir, (x, y) => {
+          this.board.setBlock(x, y, this.currentPiece.type);
+        });
+        this.renderer.invalidate('court');
+      }
+
+      /**
+       * Process queued input action
+       * @param {number} action - Action direction
+       */
+      processAction(action) {
+        switch (action) {
+          case DIRECTIONS.LEFT:
+            this.movePiece(DIRECTIONS.LEFT);
+            break;
+          case DIRECTIONS.RIGHT:
+            this.movePiece(DIRECTIONS.RIGHT);
+            break;
+          case DIRECTIONS.UP:
+            this.rotatePiece();
+            break;
+          case DIRECTIONS.DOWN:
+            this.dropPiece();
+            break;
+        }
+      }
+
+      /**
+       * Update game logic
+       * @param {number} deltaTime - Time since last update (seconds)
+       */
+      update(deltaTime) {
+        if (!this.isPlaying) return;
+
+        // Animate score counter
+        if (this.visualScore < this.score) {
+          this.visualScore = Math.min(this.score, this.visualScore + 1);
+          this.renderer.invalidate('score');
+        }
+
+        // Process input
+        const action = this.input.getNextAction();
+        if (action !== undefined) {
+          this.processAction(action);
+        }
+
+        // Auto-drop
+        this.dropTimer += deltaTime;
+        if (this.dropTimer >= this.dropInterval) {
+          this.dropTimer -= this.dropInterval;
+          this.dropPiece();
+        }
+      }
+
+      /**
+       * Main game loop
+       */
+      gameLoop() {
+        const currentTime = Utils.now();
+        const deltaTime = Math.min(1, (currentTime - this.lastTimestamp) / 1000);
+        this.lastTimestamp = currentTime;
+
+        this.update(deltaTime);
+        this.renderer.render(
+          this.board,
+          this.currentPiece,
+          this.nextPiece,
+          this.visualScore,
+          this.rows,
+          this.isPlaying
+        );
+
+        this.animationId = requestAnimationFrame(this.gameLoop);
+      }
+    }
+
+    // =========================================================================
+    // TOUCH CONTROLS - Mobile/Tablet Detection & Handler
+    // =========================================================================
+
+    class TouchControls {
+      constructor(game) {
+        this.game = game;
+        this.container = Utils.getElement('touch-controls');
+        this.playBtn = Utils.getElement('touch-play');
+        this.leftBtn = Utils.getElement('touch-left');
+        this.rotateBtn = Utils.getElement('touch-rotate');
+        this.rightBtn = Utils.getElement('touch-right');
+        this.dropBtn = Utils.getElement('touch-drop');
+        this.gameControls = document.querySelectorAll('.game-controls');
+        this.isVisible = false;
+
+        this.bindEvents();
+      }
+
+      /**
+       * Detect if device is mobile or tablet
+       * @returns {boolean}
+       */
+      static isMobileOrTablet() {
+        // Check for touch capability
+        const hasTouch = 'ontouchstart' in window ||
+          navigator.maxTouchPoints > 0 ||
+          navigator.msMaxTouchPoints > 0;
+
+        // Check user agent for mobile/tablet keywords
+        const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+        const isMobileUA = mobileRegex.test(navigator.userAgent);
+
+        // Check screen size (tablets typically < 1024px)
+        const isSmallScreen = window.innerWidth <= 1024;
+
+        // Consider it mobile/tablet if has touch AND (mobile UA OR small screen)
+        return hasTouch && (isMobileUA || isSmallScreen);
+      }
+
+      /**
+       * Show touch controls with animation
+       */
+      show() {
+        if (this.isVisible) return;
+        this.isVisible = true;
+        this.container.classList.add('visible');
+      }
+
+      /**
+       * Hide touch controls
+       */
+      hide() {
+        this.isVisible = false;
+        this.container.classList.remove('visible');
+      }
+
+      /**
+       * Update control visibility based on game state
+       * @param {boolean} isPlaying - Whether game is active
+       */
+      updateGameState(isPlaying) {
+        if (isPlaying) {
+          this.playBtn.classList.add('hidden');
+          this.gameControls.forEach(btn => btn.classList.remove('hidden'));
+        } else {
+          this.playBtn.classList.remove('hidden');
+          this.gameControls.forEach(btn => btn.classList.add('hidden'));
+        }
+      }
+
+      /**
+       * Bind touch event listeners
+       */
+      bindEvents() {
+        // Prevent context menu on long press
+        this.container.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Play button
+        this.playBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.play();
+          this.updateGameState(true);
+        }, { passive: false });
+
+        // Movement buttons with touch events
+        this.leftBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.input.actionQueue.push(DIRECTIONS.LEFT);
+        }, { passive: false });
+
+        this.rightBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.input.actionQueue.push(DIRECTIONS.RIGHT);
+        }, { passive: false });
+
+        this.rotateBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.input.actionQueue.push(DIRECTIONS.UP);
+        }, { passive: false });
+
+        this.dropBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.game.input.actionQueue.push(DIRECTIONS.DOWN);
+        }, { passive: false });
+      }
+
+      /**
+       * Auto-detect and show controls if on mobile/tablet
+       * Called within 100ms of page load
+       */
+      autoDetect() {
+        if (TouchControls.isMobileOrTablet()) {
+          this.show();
+          // Hide keyboard hints on mobile
+          const keyboardHints = document.querySelector('.controls-hint');
+          if (keyboardHints) {
+            keyboardHints.style.display = 'none';
+          }
+        }
+      }
+    }
+
+    // =========================================================================
+    // INITIALIZE GAME
+    // =========================================================================
+
+    const TetrisGame = new TetrisEngine();
+    TetrisGame.init();
+
+    // Initialize touch controls and auto-detect within 100ms
+    const touchControls = new TouchControls(TetrisGame);
+
+    // Auto-detect mobile/tablet and show controls within 100ms
+    setTimeout(() => {
+      touchControls.autoDetect();
+    }, 50); // 50ms < 100ms requirement
+
+    // Sync touch controls with game state changes
+    const originalLose = TetrisGame.lose.bind(TetrisGame);
+    TetrisGame.lose = function () {
+      originalLose();
+      touchControls.updateGameState(false);
+    };
+  </script>
+</body>
+
+</html>
